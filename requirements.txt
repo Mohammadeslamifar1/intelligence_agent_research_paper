@@ -1,0 +1,10 @@
+pymupdf
+fastapi
+uvicorn
+streamlit
+pydantic
+python-dotenv
+numpy
+scikit-learn
+pytest
+rich
