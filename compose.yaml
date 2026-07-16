@@ -1,0 +1,8 @@
+services:
+  research-paper-agent:
+    build: .
+    container_name: research_paper_intelligence_agent
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
