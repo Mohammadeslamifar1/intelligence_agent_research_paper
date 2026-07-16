@@ -1,5 +1,7 @@
 # Research Paper Intelligence Agent
 
+[![Tests](https://github.com/Mohammadeslamifar1/intelligence_agent_research_paper/actions/workflows/tests.yml/badge.svg)](https://github.com/Mohammadeslamifar1/intelligence_agent_research_paper/actions/workflows/tests.yml)
+
 Research Paper Intelligence Agent is an AI engineering project that helps users analyze academic PDF papers. It extracts text from uploaded research papers, splits the content into searchable chunks, retrieves relevant context for a user question, and generates a grounded answer with source chunks.
 
 The goal of this project is to demonstrate practical AI engineering skills, including document processing, retrieval based question answering, API development, testing, and web app deployment.
