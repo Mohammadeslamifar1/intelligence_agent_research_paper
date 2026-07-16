@@ -12,6 +12,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -27,6 +30,12 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
+      - name: Show project files
+        run: |
+          pwd
+          ls
+          ls app
+
       - name: Run tests
         run: |
-          python -m pytest
+          python -m pytest -q
