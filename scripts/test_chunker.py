@@ -21,4 +21,5 @@ def main() -> None:
     print(chunks[0].text[:1000])
 
 
-main()
+if __name__ == "__main__":
+    main()

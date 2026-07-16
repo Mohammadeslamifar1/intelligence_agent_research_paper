@@ -36,4 +36,5 @@ def main() -> None:
             print(result.text[:900])
 
 
-main()
+if __name__ == "__main__":
+    main()
