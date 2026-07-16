@@ -1,0 +1,120 @@
+import sys
+from pathlib import Path
+import tempfile
+
+import streamlit as st
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from app.generation.qa_engine import ExtractiveQAEngine
+from app.ingestion.chunker import chunk_documents
+from app.ingestion.pdf_loader import extract_text_from_pdf
+from app.retrieval.search_engine import TfidfSearchEngine
+
+
+st.set_page_config(
+    page_title="Research Paper Intelligence Agent",
+    page_icon="📄",
+    layout="wide",
+)
+
+st.title("Research Paper Intelligence Agent")
+st.write(
+    "Upload research papers, build a searchable index, and ask questions grounded in the paper content."
+)
+
+if "search_engine" not in st.session_state:
+    st.session_state.search_engine = None
+
+if "qa_engine" not in st.session_state:
+    st.session_state.qa_engine = None
+
+if "document_count" not in st.session_state:
+    st.session_state.document_count = 0
+
+if "chunk_count" not in st.session_state:
+    st.session_state.chunk_count = 0
+
+
+uploaded_files = st.file_uploader(
+    "Upload PDF research papers",
+    type=["pdf"],
+    accept_multiple_files=True,
+)
+
+build_button = st.button("Build assistant")
+
+if build_button:
+    if not uploaded_files:
+        st.warning("Please upload at least one PDF file.")
+    else:
+        with st.spinner("Reading papers and building the search index..."):
+            documents = {}
+
+            with tempfile.TemporaryDirectory() as temporary_folder:
+                temporary_path = Path(temporary_folder)
+
+                for uploaded_file in uploaded_files:
+                    pdf_path = temporary_path / uploaded_file.name
+                    pdf_path.write_bytes(uploaded_file.getbuffer())
+
+                    documents[uploaded_file.name] = extract_text_from_pdf(pdf_path)
+
+            chunks = chunk_documents(documents)
+
+            search_engine = TfidfSearchEngine()
+            search_engine.build_index(chunks)
+
+            st.session_state.search_engine = search_engine
+            st.session_state.qa_engine = ExtractiveQAEngine()
+            st.session_state.document_count = len(documents)
+            st.session_state.chunk_count = len(chunks)
+
+        st.success(
+            f"Assistant ready. Loaded {st.session_state.document_count} paper file and created {st.session_state.chunk_count} chunks."
+        )
+
+
+st.divider()
+
+st.subheader("Ask a question")
+
+question = st.text_input(
+    "Question",
+    placeholder="What is the main contribution of this paper?",
+)
+
+ask_button = st.button("Ask")
+
+if ask_button:
+    if st.session_state.search_engine is None:
+        st.warning("Build the assistant first.")
+    elif not question.strip():
+        st.warning("Please enter a question.")
+    else:
+        search_results = st.session_state.search_engine.search(
+            query=question,
+            top_k=5,
+            min_score=0.02,
+        )
+
+        answer = st.session_state.qa_engine.answer_question(
+            question=question,
+            search_results=search_results,
+        )
+
+        st.subheader("Answer")
+        st.write(answer.answer)
+
+        st.subheader("Sources")
+
+        if not answer.sources:
+            st.write("No sources found.")
+        else:
+            for source in answer.sources:
+                st.write(
+                    f"{source.document_name} | chunk {source.chunk_id} | score {source.score:.4f}"
+                )
