@@ -13,6 +13,7 @@ from app.generation.qa_engine import ExtractiveQAEngine
 from app.ingestion.chunker import chunk_documents
 from app.ingestion.pdf_loader import extract_text_from_pdf
 from app.retrieval.search_engine import TfidfSearchEngine
+from app.retrieval.embedding_search_engine import EmbeddingSearchEngine
 
 
 st.set_page_config(
@@ -45,6 +46,14 @@ uploaded_files = st.file_uploader(
     accept_multiple_files=True,
 )
 
+retrieval_method = st.selectbox(
+    "Choose retrieval method",
+    options=[
+        "TF IDF keyword search",
+        "Semantic embedding search",
+    ],
+)
+
 build_button = st.button("Build assistant")
 
 if build_button:
@@ -65,8 +74,13 @@ if build_button:
 
             chunks = chunk_documents(documents)
 
-            search_engine = TfidfSearchEngine()
+            if retrieval_method == "Semantic embedding search":
+                search_engine = EmbeddingSearchEngine()
+            else:
+                search_engine = TfidfSearchEngine()
+
             search_engine.build_index(chunks)
+            
 
             st.session_state.search_engine = search_engine
             st.session_state.qa_engine = ExtractiveQAEngine()
@@ -74,7 +88,7 @@ if build_button:
             st.session_state.chunk_count = len(chunks)
 
         st.success(
-            f"Assistant ready. Loaded {st.session_state.document_count} paper file and created {st.session_state.chunk_count} chunks."
+            f"Assistant ready using {retrieval_method}. Loaded {st.session_state.document_count} paper file and created {st.session_state.chunk_count} chunks."
         )
 
 
