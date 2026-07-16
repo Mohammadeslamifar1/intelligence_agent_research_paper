@@ -1,8 +1,25 @@
 from app.pipeline import ResearchPaperAssistant
 
 
+def choose_retrieval_method() -> str:
+    print("Choose retrieval method:")
+    print("1. TF IDF keyword search")
+    print("2. Semantic embedding search")
+
+    choice = input("Enter 1 or 2: ").strip()
+
+    if choice == "2":
+        return "semantic"
+
+    return "tfidf"
+
+
 def main() -> None:
-    assistant = ResearchPaperAssistant()
+    retrieval_method = choose_retrieval_method()
+
+    assistant = ResearchPaperAssistant(
+        retrieval_method=retrieval_method,
+    )
 
     print("Building research paper assistant...")
     assistant.build()
@@ -10,6 +27,7 @@ def main() -> None:
     print(
         f"Ready. Loaded {assistant.document_count} paper file and created {assistant.chunk_count} chunks."
     )
+    print(f"Retrieval method: {retrieval_method}")
     print("Type your question. Type exit to stop.")
 
     while True:
@@ -27,4 +45,5 @@ def main() -> None:
         print(answer)
 
 
-main()
+if __name__ == "__main__":
+    main()
