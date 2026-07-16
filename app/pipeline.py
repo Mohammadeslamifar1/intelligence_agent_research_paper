@@ -6,6 +6,7 @@ from app.generation.qa_engine import ExtractiveQAEngine
 from app.ingestion.chunker import chunk_documents
 from app.ingestion.pdf_loader import load_pdfs_from_folder
 from app.retrieval.search_engine import TfidfSearchEngine
+from app.generation.comparison_generator import PaperComparisonGenerator
 
 
 RetrievalMethod = Literal["tfidf", "semantic"]
@@ -83,6 +84,20 @@ class ResearchPaperAssistant:
         sections = report_generator.generate()
 
         return report_generator.to_markdown(sections)
+    
+    def compare_papers(self) -> str:
+        if self.search_engine is None:
+            raise ValueError("Assistant has not been built yet.")
+
+        comparison_generator = PaperComparisonGenerator(
+            search_engine=self.search_engine,
+            qa_engine=self.qa_engine,
+            min_score=self._minimum_score(),
+        )
+
+        sections = comparison_generator.generate()
+
+        return comparison_generator.to_markdown(sections)
 
     def _create_search_engine(self):
         if self.retrieval_method == "semantic":
