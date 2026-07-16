@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 import tempfile
 
+
 import streamlit as st
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -10,6 +11,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.generation.qa_engine import ExtractiveQAEngine
+from app.generation.report_generator import PaperReportGenerator
 from app.ingestion.chunker import chunk_documents
 from app.ingestion.pdf_loader import extract_text_from_pdf
 from app.retrieval.search_engine import TfidfSearchEngine
@@ -38,6 +40,9 @@ if "document_count" not in st.session_state:
 
 if "chunk_count" not in st.session_state:
     st.session_state.chunk_count = 0
+    
+if "retrieval_method" not in st.session_state:
+    st.session_state.retrieval_method = "TF IDF keyword search"
 
 
 uploaded_files = st.file_uploader(
@@ -86,6 +91,7 @@ if build_button:
             st.session_state.qa_engine = ExtractiveQAEngine()
             st.session_state.document_count = len(documents)
             st.session_state.chunk_count = len(chunks)
+            st.session_state.retrieval_method = retrieval_method
 
         st.success(
             f"Assistant ready using {retrieval_method}. Loaded {st.session_state.document_count} paper file and created {st.session_state.chunk_count} chunks."
@@ -132,3 +138,38 @@ if ask_button:
                 st.write(
                     f"{source.document_name} | chunk {source.chunk_id} | score {source.score:.4f}"
                 )
+                
+st.divider()
+
+st.subheader("Generate Paper Report")
+
+report_button = st.button("Generate Report")
+
+if report_button:
+    if st.session_state.search_engine is None:
+        st.warning("Build the assistant first.")
+    else:
+        if st.session_state.retrieval_method == "Semantic embedding search":
+            min_score = 0.20
+        else:
+            min_score = 0.02
+
+        report_generator = PaperReportGenerator(
+            search_engine=st.session_state.search_engine,
+            qa_engine=st.session_state.qa_engine,
+            min_score=min_score,
+        )
+
+        with st.spinner("Generating paper report..."):
+            sections = report_generator.generate()
+            markdown_report = report_generator.to_markdown(sections)
+
+        st.subheader("Paper Intelligence Report")
+        st.markdown(markdown_report)
+
+        st.download_button(
+            label="Download Report",
+            data=markdown_report,
+            file_name="paper_report.md",
+            mime="text/markdown",
+        )
