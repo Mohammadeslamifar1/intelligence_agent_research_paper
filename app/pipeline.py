@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Literal
+from app.generation.report_generator import PaperReportGenerator
 
 from app.generation.qa_engine import ExtractiveQAEngine
 from app.ingestion.chunker import chunk_documents
@@ -68,6 +69,20 @@ class ResearchPaperAssistant:
                 )
 
         return "\n".join(output_lines)
+
+    def generate_report(self) -> str:
+        if self.search_engine is None:
+            raise ValueError("Assistant has not been built yet.")
+
+        report_generator = PaperReportGenerator(
+            search_engine=self.search_engine,
+            qa_engine=self.qa_engine,
+            min_score=self._minimum_score(),
+        )
+
+        sections = report_generator.generate()
+
+        return report_generator.to_markdown(sections)
 
     def _create_search_engine(self):
         if self.retrieval_method == "semantic":
